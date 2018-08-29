@@ -3,7 +3,7 @@ from ase.utils import basestring
 
 
 def cut(atoms, a=(1, 0, 0), b=(0, 1, 0), c=None, clength=None,
-        origo=(0, 0, 0), nlayers=None, extend=1.0, tolerance=0.01,
+        origo=(0, 0, 0), nlayers=None, extend=1.0, tolerance=0, ## ssrokyz
         maxatoms=None):
     """Cuts out a cell defined by *a*, *b*, *c* and *origo* from a
     sufficiently repeated copy of *atoms*.

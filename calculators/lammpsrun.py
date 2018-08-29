@@ -401,21 +401,27 @@ class LAMMPS:
 
         # Write interaction stuff
         f.write('\n### interactions \n'.encode('utf-8'))
-        if ('pair_style' in parameters) and ('pair_coeff' in parameters):
+        if ('pair_style' in parameters) or ('pair_coeff' in parameters): # ssrokyz
             pair_style = parameters['pair_style']
             f.write('pair_style {0} \n'.format(pair_style).encode('utf-8'))
             for pair_coeff in parameters['pair_coeff']:
                 f.write('pair_coeff {0} \n'
                         ''.format(pair_coeff).encode('utf-8'))
             if 'mass' in parameters:
-                for mass in parameters['mass']:
-                    f.write('mass {0} \n'.format(mass).encode('utf-8'))
+                #print(parameters["mass"]) ## ssrokyz start
+               # for mass in parameters['mass']:
+                    #print(mass, 'UTF-8')
+                f.write('mass {0} \n'.format(parameters["mass"]).encode('utf-8'))
+                    #f.write('mass {0} \n'.format(mass).encode('utf-8')) ## ssrokyz end
         else:
             # simple default parameters
             # that should always make the LAMMPS calculation run
             f.write('pair_style lj/cut 2.5 \n'
                     'pair_coeff * * 1 1 \n'
                     'mass * 1.0 \n'.encode('utf-8'))
+            #f.write('pair_style deepmd frozen_model.pb \n' ## ssrokyz start
+            #        'pair_coeff \n'
+            #        'mass * 1.0 \n'.encode('utf-8')) ## ssrokyz end
 
         if 'group' in parameters:
             f.write(('\n'.join(['group {0}'.format(p)

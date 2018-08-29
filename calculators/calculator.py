@@ -41,7 +41,7 @@ def compare_atoms(atoms1, atoms2, tol=1e-15):
 
 
 all_properties = ['energy', 'forces', 'stress', 'dipole',
-                  'charges', 'magmom', 'magmoms', 'free_energy']
+                  'charges', 'magmom', 'magmoms', 'free_energy', 'energies'] ## ssrokyz
 
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc',
@@ -474,6 +474,9 @@ class Calculator(object):
     def get_magnetic_moments(self, atoms=None):
         """Calculate magnetic moments projected onto atoms."""
         return self.get_property('magmoms', atoms)
+
+    def get_potential_energies(self, atoms=None):  ## ssroky start 
+        return self.get_property('energies', atoms) ## ssrokyz end
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.implemented_properties:

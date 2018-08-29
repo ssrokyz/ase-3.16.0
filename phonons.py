@@ -114,8 +114,8 @@ class Displacement:
         """Return lattice vectors for cells in the supercell."""
 
         # Lattice vectors relevative to the reference cell
-        R_cN = np.indices(self.N_c).reshape(3, -1)
-        N_c = np.array(self.N_c)[:, np.newaxis]
+        R_cN = np.indices(self.N_c).reshape(3, -1) # Define R_cN as N_c of column vector form
+        N_c = np.array(self.N_c)[:, np.newaxis] # make N_c as 2 dim column vector
         if self.offset == 0:
             R_cN += N_c // 2
             R_cN %= N_c
@@ -146,9 +146,14 @@ class Displacement:
         filename = self.name + '.eq.pckl'
 
         fd = opencew(filename)
-        if fd is not None:
+        if fd is not None: # if fd is None : means there is already eq.pckl file 
             # Call derived class implementation of __call__
-            output = self.__call__(atoms_N)
+            output = self.__call__(atoms_N) # return forces
+            # Write trajectory file ( ssrokyz start )
+            traj_ss = Trajectory(self.name+".eq.traj", "w")
+            traj_ss.write(atoms_N) 
+            traj_ss.close() # ssrokyz end
+            
             # Write output to file
             if rank == 0:
                 pickle.dump(output, fd, protocol=2)
@@ -162,17 +167,18 @@ class Displacement:
         pos = atoms_N.positions[offset: offset + natoms].copy()
 
         # Loop over all displacements
-        for a in self.indices:
+        for a in self.indices: # self.indices was len(atoms)
             for i in range(3):
                 for sign in [-1, 1]:
                     # Filename for atomic displacement
-                    filename = '%s.%d%s%s.pckl' % \
-                               (self.name, a, 'xyz'[i], ' +-'[sign])
+                    raw_name = '%s.%d%s%s' % (self.name, a, 'xyz'[i], ' +-'[sign]) # ssrokyz start
+                    filename = '%s.pckl' % (raw_name) # ssrokyz end
                     # Wait for ranks before checking for file
                     # barrier()
                     fd = opencew(filename)
                     if fd is None:
                         # Skip if already done
+                        sys.stdout.write("Skip "+filename+". It already exists.") # ssrokyz
                         continue
 
                     # Update atomic positions
@@ -181,6 +187,12 @@ class Displacement:
 
                     # Call derived class implementation of __call__
                     output = self.__call__(atoms_N)
+
+                    # Write trajectory file ( ssrokyz start )
+                    traj_ss = Trajectory(raw_name+".traj", "w")
+                    traj_ss.write(atoms_N) 
+                    traj_ss.close() # ssrokyz end
+
                     # Write output to file
                     if rank == 0:
                         pickle.dump(output, fd, protocol=2)
@@ -436,6 +448,30 @@ class Phonons(Displacement):
         for D in self.D_N:
             D *= M_inv
 
+        # save force constants and dynamical matrix # ssrokyz start
+        FC_file = open(self.name+".fc.txt", "w")
+        r1_num = len(C_N)
+        r2_num = len(C_N[0])
+        r3_num = len(C_N[0][0])
+        FC_file.write("Dimension of matrix :: "+str(r1_num)+" X "+str(r2_num)+" X "+str(r3_num)+"\n\n\n")
+        FC_file.write("*********** force constants, C_N ***********\n\n")
+        for row1 in self.C_N:
+            for row2 in row1:
+                for row3 in row2:
+                    FC_file.write(str("%.6f" % row3)+"\t")
+                FC_file.write("\n")
+            FC_file.write("\n\n")  
+
+        FC_file.write("*********** force constants devided by mass, D_N ***********\n\n")
+        for row1 in self.D_N:
+            for row2 in row1:
+                for row3 in row2:
+                    FC_file.write(str("%.6f" % row3)+"\t")
+                FC_file.write("\n")
+            FC_file.write("\n\n")
+
+        FC_file.close()  # ssrokyz end
+
     def symmetrize(self, C_N):
         """Symmetrize force constant matrix."""
 
@@ -529,7 +565,7 @@ class Phonons(Displacement):
 
         return self.C_N
 
-    def band_structure(self, path_kc, modes=False, born=False, verbose=True):
+    def band_structure(self, path_kc, modes=False, born=False, verbose=True, dq_print=False): # ssrokyz
         """Calculate phonon dispersion along a path in the Brillouin zone.
 
         The dynamical matrix at arbitrary q-vectors is obtained by Fourier
@@ -604,6 +640,19 @@ class Phonons(Displacement):
             # Evaluate fourier sum
             phase_N = np.exp(-2.j * pi * np.dot(q_c, R_cN))
             D_q = np.sum(phase_N[:, np.newaxis, np.newaxis] * D_N, axis=0)
+
+            if dq_print: # ssrokyz start
+                np.set_printoptions(threshold=np.nan)
+                print("R_cN")
+                print(R_cN)
+                print("q_c")
+                print(q_c)
+                print("phase_N")
+                print(phase_N)
+                print("D_N")
+                print(D_N)
+                print("D_q")
+                print(D_q) # ssrokyz end
 
             if modes:
                 omega2_l, u_xl = la.eigh(D_q, UPLO='U')

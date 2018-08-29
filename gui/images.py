@@ -70,6 +70,14 @@ class Images:
         else:
             return F
 
+    def get_potential_energies(self, atoms): ## ssrokyz start
+        try:
+            energies =  atoms.get_potential_energies()
+        except RuntimeError:
+            return None
+        else:
+            return energies ## ssrokyz end
+
     def initialize(self, images, filenames=None, init_magmom=False):
         nimages = len(images)
         if filenames is None:

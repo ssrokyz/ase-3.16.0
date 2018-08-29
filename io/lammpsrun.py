@@ -4,6 +4,7 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.parallel import paropen
 from ase.utils import basestring
 from collections import deque
+from ase import units ## ssrokyz
 
 
 def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
@@ -33,6 +34,7 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
             id = []
             types = []
             positions = []
+            element = [] ## ssrokyz
             scaled_positions = []
             velocities = []
             forces = []
@@ -106,9 +108,17 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
                 fields = line.split()
                 id.append(int(fields[atom_attributes['id']]))
                 types.append(int(fields[atom_attributes['type']]))
+                element.append(str(fields[atom_attributes['element']])) ## ssrokyz
                 add_quantity(fields, positions, ['x', 'y', 'z'])
                 add_quantity(fields, scaled_positions, ['xs', 'ys', 'zs'])
-                add_quantity(fields, velocities, ['vx', 'vy', 'vz'])
+
+                #add_quantity(fields, velocities, ['vx', 'vy', 'vz'])  # ssrokyz start
+                for label in ['vx', 'vy', 'vz']:
+                    if label not in atom_attributes:
+                        return
+                velocities.append([float(fields[atom_attributes[label]])/1000/units.fs
+                                   for label in ['vx', 'vy', 'vz']]) # ssrokyz end
+
                 add_quantity(fields, forces, ['fx', 'fy', 'fz'])
                 add_quantity(fields, quaternions, ['c_q[1]', 'c_q[2]',
                                                    'c_q[3]', 'c_q[4]'])
@@ -129,17 +139,17 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
                 quaternions = reorder(quaternions)
 
             if len(quaternions):
-                images.append(Quaternions(symbols=types,
+                images.append(Quaternions(symbols=element, ## ssrokyz
                                           positions=positions,
                                           cell=cell, celldisp=celldisp,
                                           quaternions=quaternions))
             elif len(positions):
                 images.append(atomsobj(
-                    symbols=types, positions=positions,
+                    symbols=element, positions=positions, ## ssrokyz
                     celldisp=celldisp, cell=cell))
             elif len(scaled_positions):
                 images.append(atomsobj(
-                    symbols=types, scaled_positions=scaled_positions,
+                    symbols=element, scaled_positions=scaled_positions, ## ssrokyz
                     celldisp=celldisp, cell=cell))
 
             if len(velocities):
@@ -150,3 +160,4 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
                 images[-1].set_calculator(calculator)
 
     return images[index]
+
