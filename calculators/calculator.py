@@ -555,11 +555,17 @@ class Calculator(object):
         if atoms is not None:
             self.atoms = atoms.copy()
 
+    # def generate_numerical_images(self, atoms, d=0.001):
+        # """ Make Atoms list that  """
+
     def calculate_numerical_forces(self, atoms, d=0.001):
         """Calculate numerical forces using finite difference.
 
         All atoms will be displaced by +d and -d in all directions."""
 
+        # if (str(self.__class__)=="<class 'amp.Amp'>"):
+            
+        # else:
         from ase.calculators.test import numeric_force
         return np.array([[numeric_force(atoms, a, i, d)
                           for i in range(3)] for a in range(len(atoms))])
