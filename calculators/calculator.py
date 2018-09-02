@@ -558,17 +558,55 @@ class Calculator(object):
     # def generate_numerical_images(self, atoms, d=0.001):
         # """ Make Atoms list that  """
 
+    def generate_disp(self, atoms, d=0.001):
+        """ return ase Atoms list needed to calculate numeric forces """
+        disp_atoms = []
+        p0 = atoms.get_positions()
+        for a in range(len(atoms)):
+            for i in range(3):
+                p = p0.copy()
+                p[a, i] -= d
+                atoms.set_positions(p, apply_constraint=False)
+                disp_atoms.append(atoms.copy())
+                p[a, i] += 2*d
+                atoms.set_positions(p, apply_constraint=False)
+                disp_atoms.append(atoms.copy())
+        return disp_atoms
+
+    def numeric_force(self, atoms, a, i, d=0.001):
+        """Compute numeric force on atom with index a, Cartesian component i,
+        with finite step of size d
+        """
+        p0 = atoms.get_positions()
+        p = p0.copy()
+        p[a, i] += d
+        atoms.set_positions(p, apply_constraint=False)
+        eplus = atoms.get_potential_energy()
+        p[a, i] -= 2 * d
+        atoms.set_positions(p, apply_constraint=False)
+        eminus = atoms.get_potential_energy()
+        atoms.set_positions(p0, apply_constraint=False)
+        return (eminus - eplus) / (2 * d)
+
     def calculate_numerical_forces(self, atoms, d=0.001):
         """Calculate numerical forces using finite difference.
 
         All atoms will be displaced by +d and -d in all directions."""
 
-        # if (str(self.__class__)=="<class 'amp.Amp'>"):
-            
-        # else:
-        from ase.calculators.test import numeric_force
-        return np.array([[numeric_force(atoms, a, i, d)
-                          for i in range(3)] for a in range(len(atoms))])
+        if (str(self.__class__)=="<class 'amp.Amp'>"):
+            disp_atoms = self.generate_disp(atoms, d=0.001)
+            energies = self.calculateE_bunch(disp_atoms)
+            energies = np.array(np.split(np.array(np.split(energies, len(atoms)*3)), len(atoms)))
+            forces = np.zeros((len(atoms),3))
+            for i in range(len(atoms)):
+                for j in range(3):
+                    forces [i][j] = \
+                        -1 * ( energies[i][j][1] - energies[i][j][0] ) / 2 * d
+            return forces
+
+        else:
+            return np.array([[self.numeric_force(atoms, a, i, d)
+                              for i in range(3)] for a in range(len(atoms))])
 
     def calculate_numerical_stress(self, atoms, d=1e-6, voigt=True):
         """Calculate numerical stress using finite difference."""
