@@ -588,20 +588,19 @@ class Calculator(object):
         atoms.set_positions(p0, apply_constraint=False)
         return (eminus - eplus) / (2 * d)
 
-    def calculate_numerical_forces(self, atoms, d=0.001):
+    def calculate_numerical_forces(self, atoms, d=0.001, parallel = True):
         """Calculate numerical forces using finite difference.
-
         All atoms will be displaced by +d and -d in all directions."""
 
         if (str(self.__class__)=="<class 'amp.Amp'>"):
-            disp_atoms = self.generate_disp(atoms, d=0.001)
-            energies = self.calculateE_bunch(disp_atoms)
+            disp_atoms = self.generate_disp(atoms, d = d)
+            energies = self.calculateE_bunch(disp_atoms, parallel = parallel)
             energies = np.array(np.split(np.array(np.split(energies, len(atoms)*3)), len(atoms)))
             forces = np.zeros((len(atoms),3))
             for i in range(len(atoms)):
                 for j in range(3):
                     forces [i][j] = \
-                        -1 * ( energies[i][j][1] - energies[i][j][0] ) / 2 * d
+                        -1 * ( energies[i][j][1] - energies[i][j][0] ) / (2 * d)
             return forces
 
         else:
