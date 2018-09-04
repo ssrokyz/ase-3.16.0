@@ -593,19 +593,65 @@ class Calculator(object):
         All atoms will be displaced by +d and -d in all directions."""
 
         if (str(self.__class__)=="<class 'amp.Amp'>"):
-            disp_atoms = self.generate_disp(atoms, d = d)
-            energies = self.calculateE_bunch(disp_atoms, parallel = parallel)
-            energies = np.array(np.split(np.array(np.split(energies, len(atoms)*3)), len(atoms)))
-            forces = np.zeros((len(atoms),3))
-            for i in range(len(atoms)):
-                for j in range(3):
-                    forces [i][j] = \
-                        -1 * ( energies[i][j][1] - energies[i][j][0] ) / (2 * d)
-            return forces
+            if (str(self.model.__class__)=="<class 'amp.model.tflow.NeuralNetwork'>"):
+                disp_atoms = self.generate_disp(atoms, d = d)
+                energies = self.calculateE_bunch(disp_atoms, parallel = parallel)
+                energies = np.array(np.split(np.array(np.split(
+                    energies, len(atoms)*3)), len(atoms)))
+                forces = np.zeros((len(atoms),3))
+                for i in range(len(atoms)):
+                    for j in range(3):
+                        forces [i][j] = \
+                            -1 * ( energies[i][j][1] - energies[i][j][0] ) / (2 * d)
+                return forces
+            else:
+                Calculator.calculate(self, atoms)
+                disp_atoms = self.generate_disp(atoms, d = d)
+                log = self._log
+                log('Calculation requested.')
+
+                from amp.utilities import hash_images
+                images, seq_keys = hash_images(disp_atoms, list_seq=True)
+                keys = list(images.keys())[0]
+
+                ############### load neighborlist file list most recently used
+                if hasattr(self, "neighborlist_keys"):
+                    n_keys = self.neighborlist_keys
+                else:
+                    n_keys = None
+                if hasattr(self, "fingerprints_keys"):
+                    f_keys = self.fingerprints_keys
+                else:
+                    f_keys = None
+                ############# update neighborlists & fingerprints file lists
+                self.neighborlist_keys, self.fingerprints_keys = \
+                    self.descriptor.calculate_fingerprints(
+                        images=images,
+                        log=log,
+                        calculate_derivatives=False,
+                        neighborlist_keys = n_keys,
+                        fingerprints_keys = f_keys,
+                        parallel = self._parallel if parallel else None,
+                        )
+                log('Calculating potential energy...', tic='pot-energy')
+                seq_keys = np.array(np.split(np.array(np.split(
+                    np.array(seq_keys), len(atoms)*3)), len(atoms)))
+                forces = np.zeros((len(atoms),3))
+                for a in range(len(atoms)):
+                    for i in range(3):
+                        eplus = self.model.calculate_energy(
+                            self.descriptor.fingerprints[seq_keys[a][i][1]])
+                        self.descriptor.fingerprints.close()
+                        eminus = self.model.calculate_energy(
+                            self.descriptor.fingerprints[seq_keys[a][i][0]])
+                        self.descriptor.fingerprints.close()
+                        forces[a][i] = (eminus - eplus) / (2 * d)
+                log('Potential energy calc ended...', toc='pot-energy')
+                return forces
 
         else:
             return np.array([[self.numeric_force(atoms, a, i, d)
-                              for i in range(3)] for a in range(len(atoms))])
+                for i in range(3)] for a in range(len(atoms))])
 
     def calculate_numerical_stress(self, atoms, d=1e-6, voigt=True):
         """Calculate numerical stress using finite difference."""
