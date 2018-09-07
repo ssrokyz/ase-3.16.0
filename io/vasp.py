@@ -779,10 +779,10 @@ def write_vasp(filename, atoms, label='', direct=False, sort=None,
 
     # If we're writing a VASP 5.x format POSCAR file, write out the
     # atomic symbols
-    if vasp5:
-        for sym, c in sc:
-            f.write(' %3s' % sym)
-        f.write('\n')
+    # if vasp5:
+    for sym, c in sc:
+        f.write(' %3s' % sym)
+    f.write('\n')
 
     # Numbers of each atom
     for sym, count in sc:
