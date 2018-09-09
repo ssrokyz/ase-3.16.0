@@ -296,24 +296,10 @@ class Vasp(GenerateVaspInput, Calculator):
 
     def read_stress(self):
         stress = None
-        # for line in open('OUTCAR'):
-            # if line.find(' in kB  ') != -1:
-                # stress = -np.array([float(a) for a in line.split()[2:]])
-                # stress = stress[[0, 1, 2, 4, 5, 3]] * 1e-1 * ase.units.GPa
-        with open('vasprun.xml') as xml:
-            while True:
-                line = xml.readline()
-                if not line: break
-                if line.find('name="stress"') != -1: 
-                    line = xml.readline()
-                    s1 = line.split()[1:4]
-                    line = xml.readline()
-                    s2 = line.split()[1:4]
-                    line = xml.readline()
-                    s3 = line.split()[1:4]
-                    break
-            sa = np.array([s1[0],s2[1],s3[2],s2[2],s3[0],s1[1]], dtype=float)
-            stress = sa * 1e-1 * ase.units.Gpa
+        for line in open('OUTCAR'):
+            if line.find(' in kB  ') != -1:
+                stress = -np.array([float(a) for a in line.split()[2:]])
+                stress = stress[[0, 1, 2, 4, 5, 3]] * 1e-1 * ase.units.GPa
         return stress
 
     def read_ldau(self):
