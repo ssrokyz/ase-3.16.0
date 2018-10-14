@@ -409,10 +409,15 @@ class LAMMPS:
                         ''.format(pair_coeff).encode('utf-8'))
             if 'mass' in parameters:
                 #print(parameters["mass"]) ## ssrokyz start
+                if isinstance(parameters['mass'], list):
+                    for j in parameters['mass']:
+                        f.write('mass {0} \n'.format(j).encode('utf-8'))
                # for mass in parameters['mass']:
                     #print(mass, 'UTF-8')
-                f.write('mass {0} \n'.format(parameters["mass"]).encode('utf-8'))
-                    #f.write('mass {0} \n'.format(mass).encode('utf-8')) ## ssrokyz end
+                    #f.write('mass {0} \n'.format(mass).encode('utf-8'))
+                elif isinstance(parameters['mass'], str):
+                    f.write('mass {0} \n'.format(parameters["mass"]
+                        ).encode('utf-8')) ## ssrokyz end
         else:
             # simple default parameters
             # that should always make the LAMMPS calculation run
