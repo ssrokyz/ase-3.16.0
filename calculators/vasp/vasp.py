@@ -37,7 +37,7 @@ from .create_input import GenerateVaspInput
 class Vasp(GenerateVaspInput, Calculator):
     name = 'Vasp'
 
-    implemented_properties = ['energy', 'forces', 'dipole', 'fermi', 'stress'
+    implemented_properties = ['energy', 'forces', 'dipole', 'fermi', 'stress',
                                 'magmom', 'magmoms']
 
     def __init__(self, restart=None,
@@ -739,7 +739,7 @@ class Vasp(GenerateVaspInput, Calculator):
         """Returns the value of a property"""
 
         if name not in Vasp.implemented_properties:
-            raise PropertyNotImplementedError
+            raise PropertyNotImplementedError('Error :: '+name+' property not implemented')
 
         if atoms is None:
             atoms = self.atoms
