@@ -46,10 +46,12 @@ CALCULATION_END_MARK = '__end_of_ase_invoked_calculation__'
 
 class LAMMPS:
 
-    def __init__(self, label='lammps', tmp_dir=None, parameters={},
-                 specorder=None, files=[], always_triclinic=False,
+    # def __init__(self, label='lammps', tmp_dir=None, parameters={}, ## ssrokyz start
+    def __init__(self, specorder, label='lammps', tmp_dir=None, parameters={},
+                 files=[], always_triclinic=False,
+                 # specorder=None, files=[], always_triclinic=False,
                  keep_alive=False, keep_tmp_files=False,
-                 # keep_alive=True, keep_tmp_files=False, ## ssrokyz
+                 # keep_alive=True, keep_tmp_files=False, ## ssrokyz end
                  no_data_file=False):
         """The LAMMPS calculators object
 
