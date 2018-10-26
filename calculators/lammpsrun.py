@@ -48,7 +48,8 @@ class LAMMPS:
 
     def __init__(self, label='lammps', tmp_dir=None, parameters={},
                  specorder=None, files=[], always_triclinic=False,
-                 keep_alive=True, keep_tmp_files=False,
+                 keep_alive=False, keep_tmp_files=False,
+                 # keep_alive=True, keep_tmp_files=False, ## ssrokyz
                  no_data_file=False):
         """The LAMMPS calculators object
 
