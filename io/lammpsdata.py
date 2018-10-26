@@ -6,7 +6,7 @@ from ase.parallel import paropen
 from ase.utils import basestring
 
 
-def read_lammps_data(fileobj, Z_of_type=None, style='full', sort_by_id=False):
+def read_lammps_data(fileobj, Z_of_type=None, style='atomic', sort_by_id=False): ## ssrokyz
     """Method which reads a LAMMPS data file.
 
     sort_by_id: Order the particles according to their id. Might be faster to
