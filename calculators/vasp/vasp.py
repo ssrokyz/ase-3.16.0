@@ -297,6 +297,7 @@ class Vasp(GenerateVaspInput, Calculator):
     def read_stress(self):
         stress = None
         for line in open('OUTCAR'):
+            ########## kB below means kBar. But in ase units kB means Boltzmann Const.
             if line.find(' in kB  ') != -1:
                 stress = -np.array([float(a) for a in line.split()[2:]])
                 stress = stress[[0, 1, 2, 4, 5, 3]] * 1e-1 * ase.units.GPa
