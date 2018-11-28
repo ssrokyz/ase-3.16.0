@@ -82,6 +82,7 @@ class Siesta3_2(BaseSiesta):
         ('PAO.SoftPotential', 40.0),  # Ry
         ('PS.lmax', None),
         ('PS.KBprojectors', None),
+        ('OMM.UseCholesky', True),
         ('FilterCutoff', None),
         ('FilterTol', None),
         ('User.Basis', False),
@@ -367,6 +368,7 @@ class SiestaTrunk462(BaseSiesta):
         ('PAO.NewSplitCode', False),
         ('PAO.FixSplitTable', False),
         ('PAO.FixSplitTailNorm', False),
+        ('OMM.UseCholesky', True),
         ('PAO.SoftDefault', False),
         ('PAO.SoftInnerRadius', 0.9),
         ('PAO.SoftPotential', 40.0),  # Ry
