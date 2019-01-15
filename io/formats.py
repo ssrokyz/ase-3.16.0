@@ -696,7 +696,7 @@ def filetype(filename, read=True, guess=True):
                           ('espresso-in', b'\n&SYSTEM'),
                           ('espresso-out', b'Program PWSCF'),
                           ('aims-output', b'Invoking FHI-aims ...'),
-                          ('lammps-dump', b'\nITEM: TIMESTEP\n'),
+                          ('lammps-dump', b'ITEM: TIMESTEP\n'),
                           ('qbox', b':simulation xmlns:'),
                           ('xsf', b'\nANIMSTEPS'),
                           ('xsf', b'\nCRYSTAL'),
