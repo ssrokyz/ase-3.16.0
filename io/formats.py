@@ -433,7 +433,7 @@ def _write(filename, fd, format, io, images, parallel=None, append=False, **kwar
             io.write(filename, images, **kwargs)
 
 
-def read(filename, index=None, format=None, parallel=True, **kwargs):
+def read(filename, index=None, format=None, parallel=True, return_format=False, **kwargs):
     """Read Atoms object(s) from file.
 
     filename: str or file
@@ -472,11 +472,19 @@ def read(filename, index=None, format=None, parallel=True, **kwargs):
     format = format or filetype(filename)
     io = get_ioformat(format)
     if isinstance(index, (slice, basestring)):
-        return list(_iread(filename, index, format, io, parallel=parallel,
-                           **kwargs))
+        if return_format:
+            return list(_iread(filename, index, format, io, parallel=parallel,
+                               **kwargs)), format
+        else:
+            return list(_iread(filename, index, format, io, parallel=parallel,
+                               **kwargs))
     else:
-        return next(_iread(filename, slice(index, None), format, io,
-                           parallel=parallel, **kwargs))
+        if return_format:
+            return next(_iread(filename, slice(index, None), format, io,
+                               parallel=parallel, **kwargs)), format
+        else:
+            return next(_iread(filename, slice(index, None), format, io,
+                               parallel=parallel, **kwargs))
 
 
 def iread(filename, index=None, format=None, parallel=True, **kwargs):
