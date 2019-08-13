@@ -167,18 +167,18 @@ def cut(atoms, a=(1, 0, 0), b=(0, 1, 0), c=None, clength=None,
                                  [1., 1., 0.], [1., 1., 1.]])
     corners = np.dot(scorners_newcell, newcell * extend)
     scorners = np.linalg.solve(cell.T, corners.T).T
-    rep = np.ceil(scorners.ptp(axis=0)).astype('int') + 1
+    rep = np.ceil(scorners.ptp(axis=0)).astype('int') #+ 1
     trans = np.dot(np.floor(scorners.min(axis=0)), cell)
     atoms = atoms.repeat(rep)
-    atoms.translate(trans)
+    # atoms.translate(trans)
     atoms.set_cell(newcell)
 
     # Mask out atoms outside new cell
-    stol = 0.1 * tolerance  # scaled tolerance, XXX
-    maskcell = atoms.cell * extend
-    sp = np.linalg.solve(maskcell.T, (atoms.positions).T).T
-    mask = np.all(np.logical_and(-stol <= sp, sp < 1 - stol), axis=1)
-    atoms = atoms[mask]
+    # stol = 0.1 * tolerance  # scaled tolerance, XXX
+    # maskcell = atoms.cell * extend
+    # sp = np.linalg.solve(maskcell.T, (atoms.positions).T).T
+    # mask = np.all(np.logical_and(-stol <= sp, sp < 1 - stol), axis=1)
+    # atoms = atoms[mask]
     return atoms
 
 
