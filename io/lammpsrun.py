@@ -18,14 +18,12 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
     else:
         f = fileobj
 
-    # load everything into memory
-    lines = deque(f.readlines())
-
     natoms = 0
     images = []
 
-    while len(lines) > natoms:
-        line = lines.popleft()
+    while True:
+        line = f.readline()
+        if not line: break
 
         if 'ITEM: TIMESTEP' in line:
             lo = []
@@ -41,7 +39,8 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
             quaternions = []
 
         if 'ITEM: NUMBER OF ATOMS' in line:
-            line = lines.popleft()
+            line = f.readline()
+            if not line: break
             natoms = int(line.split()[0])
             
         if 'ITEM: BOX BOUNDS' in line:
@@ -49,7 +48,8 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
             # triclinic case (>=lammps-7Jul09)
             tilt_items = line.split()[3:]
             for i in range(3):
-                line = lines.popleft()
+                line = f.readline()
+                if not line: break
                 fields = line.split()
                 lo.append(float(fields[0]))
                 hi.append(float(fields[1]))
@@ -104,7 +104,8 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
             for (i, x) in enumerate(line.split()[2:]):
                 atom_attributes[x] = i
             for n in range(natoms):
-                line = lines.popleft()
+                line = f.readline()
+                if not line: break
                 fields = line.split()
                 id.append(int(fields[atom_attributes['id']]))
                 types.append(int(fields[atom_attributes['type']]))
