@@ -5,7 +5,7 @@ from ase.parallel import paropen
 from ase.utils import basestring
 from collections import deque
 from ase import units ## ssrokyz
-
+import numpy as np ## ssrokyz
 
 def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
     """Method which reads a LAMMPS dump file.
@@ -20,6 +20,21 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
 
     natoms = 0
     images = []
+
+    def add_quantity(fields, var, labels):
+        for label in labels:
+            if label not in atom_attributes:
+                return
+        var.append([float(fields[atom_attributes[label]])
+                    for label in labels])
+        
+    def reorder(inlist):
+        if not len(inlist):
+            return inlist
+        outlist = [None] * len(id)
+        for i, v in zip(id, inlist):
+            outlist[i - 1] = v
+        return outlist
 
     while True:
         line = f.readline()
@@ -87,13 +102,6 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
 
             cell = [[xhilo, 0, 0], [xy, yhilo, 0], [xz, yz, zhilo]]
             celldisp = [[celldispx, celldispy, celldispz]]
-
-        def add_quantity(fields, var, labels):
-            for label in labels:
-                if label not in atom_attributes:
-                    return
-            var.append([float(fields[atom_attributes[label]])
-                        for label in labels])
                 
         if 'ITEM: ATOMS' in line:
             # (reliably) identify values by labels behind
@@ -112,30 +120,16 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
                 element.append(str(fields[atom_attributes['element']])) ## ssrokyz
                 add_quantity(fields, positions, ['x', 'y', 'z'])
                 add_quantity(fields, scaled_positions, ['xs', 'ys', 'zs'])
-
-                #add_quantity(fields, velocities, ['vx', 'vy', 'vz'])  # ssrokyz start
-                for label in ['vx', 'vy', 'vz']:
-                    if label not in atom_attributes:
-                        return
-                velocities.append([float(fields[atom_attributes[label]])/1000/units.fs
-                                   for label in ['vx', 'vy', 'vz']]) # ssrokyz end
-
+                add_quantity(fields, velocities, ['vx', 'vy', 'vz'])
                 add_quantity(fields, forces, ['fx', 'fy', 'fz'])
                 add_quantity(fields, quaternions, ['c_q[1]', 'c_q[2]',
                                                    'c_q[3]', 'c_q[4]'])
 
             if order:
-                def reorder(inlist):
-                    if not len(inlist):
-                        return inlist
-                    outlist = [None] * len(id)
-                    for i, v in zip(id, inlist):
-                        outlist[i - 1] = v
-                    return outlist
                 types = reorder(types)
                 positions = reorder(positions)
                 scaled_positions = reorder(scaled_positions)
-                velocities = reorder(velocities)
+                velocities = reorder(np.array(velocities) /units.fs /1e3) ## ssrokyz ## lammps metal unit: Ang./picosec ## units.fs *1e3 = units.ps
                 forces = reorder(forces)
                 quaternions = reorder(quaternions)
 
