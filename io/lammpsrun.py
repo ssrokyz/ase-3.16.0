@@ -7,9 +7,10 @@ from collections import deque
 from ase import units ## ssrokyz
 import numpy as np ## ssrokyz
 
-def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
+def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
     """Method which reads a LAMMPS dump file.
 
+    index: must be slice object
     order: Order the particles according to their id. Might be faster to
     switch it off.
     """
@@ -17,9 +18,6 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
         f = paropen(fileobj)
     else:
         f = fileobj
-
-    images = []
-    sampling_index = range(10000000)[index]
 
     def add_quantity(fields, var, labels, atom_attributes):
         for label in labels:
@@ -166,20 +164,25 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
             atoms.set_calculator(calculator)
         return atoms
 
-    
+    ## Main
+    images = []
+    sampling_index = range(10000000)[index]
+
     ## Read first image
     atoms = read_a_loop(f)
     natoms = len(atoms)
     if 0 in sampling_index:
         images.append(atoms)
     img_ind = 1
-    while True:
+    for _ in range(sampling_index[-1]):
         try:
             if img_ind in sampling_index:
                 images.append(read_a_loop(f))
             else:
                 for _ in range(natoms + 9):
                     line = f.readline()
+                    if not line:
+                        break
         except:
             break
         else:
