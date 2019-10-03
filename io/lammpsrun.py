@@ -18,17 +18,17 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
     else:
         f = fileobj
 
-    natoms = 0
     images = []
+    sampling_index = range(10000000)[index]
 
-    def add_quantity(fields, var, labels):
+    def add_quantity(fields, var, labels, atom_attributes):
         for label in labels:
             if label not in atom_attributes:
                 return
         var.append([float(fields[atom_attributes[label]])
                     for label in labels])
         
-    def reorder(inlist):
+    def reorder(inlist, id):
         if not len(inlist):
             return inlist
         outlist = [None] * len(id)
@@ -36,123 +36,154 @@ def read_lammps_dump(fileobj, index=-1, order=True, atomsobj=Atoms):
             outlist[i - 1] = v
         return outlist
 
-    while True:
+    def read_a_loop(f):
+        ## Time step
         line = f.readline()
-        if not line: break
+        assert 'ITEM: TIMESTEP' in line
+        lo = []
+        hi = []
+        tilt = []
+        id = []
+        types = []
+        positions = []
+        element = [] ## ssrokyz
+        scaled_positions = []
+        velocities = []
+        forces = []
+        quaternions = []
+        # Read out timestep
+        line = f.readline()
 
-        if 'ITEM: TIMESTEP' in line:
-            lo = []
-            hi = []
-            tilt = []
-            id = []
-            types = []
-            positions = []
-            element = [] ## ssrokyz
-            scaled_positions = []
-            velocities = []
-            forces = []
-            quaternions = []
-
-        if 'ITEM: NUMBER OF ATOMS' in line:
-            line = f.readline()
-            if not line: break
-            natoms = int(line.split()[0])
+        ## Number of atoms
+        line = f.readline()
+        assert 'ITEM: NUMBER OF ATOMS' in line
+        line = f.readline()
+        natoms = int(line.split()[0])
             
-        if 'ITEM: BOX BOUNDS' in line:
-            # save labels behind "ITEM: BOX BOUNDS" in
-            # triclinic case (>=lammps-7Jul09)
-            tilt_items = line.split()[3:]
-            for i in range(3):
-                line = f.readline()
-                if not line: break
-                fields = line.split()
-                lo.append(float(fields[0]))
-                hi.append(float(fields[1]))
-                if (len(fields) >= 3):
-                    tilt.append(float(fields[2]))
+        ## Box bounds
+        line = f.readline()
+        assert 'ITEM: BOX BOUNDS' in line
+        # save labels behind "ITEM: BOX BOUNDS" in
+        # triclinic case (>=lammps-7Jul09)
+        tilt_items = line.split()[3:]
+        for i in range(3):
+            line = f.readline()
+            fields = line.split()
+            lo.append(float(fields[0]))
+            hi.append(float(fields[1]))
+            if (len(fields) >= 3):
+                tilt.append(float(fields[2]))
 
-            # determine cell tilt (triclinic case!)
-            if (len(tilt) >= 3):
-                # for >=lammps-7Jul09 use labels behind
-                # "ITEM: BOX BOUNDS" to assign tilt (vector) elements ...
-                if (len(tilt_items) >= 3):
-                    xy = tilt[tilt_items.index('xy')]
-                    xz = tilt[tilt_items.index('xz')]
-                    yz = tilt[tilt_items.index('yz')]
-                # ... otherwise assume default order in 3rd column
-                # (if the latter was present)
-                else:
-                    xy = tilt[0]
-                    xz = tilt[1]
-                    yz = tilt[2]
+        # determine cell tilt (triclinic case!)
+        if (len(tilt) >= 3):
+            # for >=lammps-7Jul09 use labels behind
+            # "ITEM: BOX BOUNDS" to assign tilt (vector) elements ...
+            if (len(tilt_items) >= 3):
+                xy = tilt[tilt_items.index('xy')]
+                xz = tilt[tilt_items.index('xz')]
+                yz = tilt[tilt_items.index('yz')]
+            # ... otherwise assume default order in 3rd column
+            # (if the latter was present)
             else:
-                xy = xz = yz = 0
-            xhilo = (hi[0] - lo[0]) - (xy**2)**0.5 - (xz**2)**0.5
-            yhilo = (hi[1] - lo[1]) - (yz**2)**0.5
-            zhilo = (hi[2] - lo[2])
-            if xy < 0:
-                if xz < 0:
-                    celldispx = lo[0] - xy - xz
-                else:
-                    celldispx = lo[0] - xy
+                xy = tilt[0]
+                xz = tilt[1]
+                yz = tilt[2]
+        else:
+            xy = xz = yz = 0
+        xhilo = (hi[0] - lo[0]) - (xy**2)**0.5 - (xz**2)**0.5
+        yhilo = (hi[1] - lo[1]) - (yz**2)**0.5
+        zhilo = (hi[2] - lo[2])
+        if xy < 0:
+            if xz < 0:
+                celldispx = lo[0] - xy - xz
             else:
-                celldispx = lo[0]
-            celldispy = lo[1]
-            celldispz = lo[2]
+                celldispx = lo[0] - xy
+        else:
+            celldispx = lo[0]
+        celldispy = lo[1]
+        celldispz = lo[2]
 
-            cell = [[xhilo, 0, 0], [xy, yhilo, 0], [xz, yz, zhilo]]
-            celldisp = [[celldispx, celldispy, celldispz]]
+        cell = [[xhilo, 0, 0], [xy, yhilo, 0], [xz, yz, zhilo]]
+        celldisp = [[celldispx, celldispy, celldispz]]
                 
-        if 'ITEM: ATOMS' in line:
-            # (reliably) identify values by labels behind
-            # "ITEM: ATOMS" - requires >=lammps-7Jul09
-            # create corresponding index dictionary before
-            # iterating over atoms to (hopefully) speed up lookups...
-            atom_attributes = {}
-            for (i, x) in enumerate(line.split()[2:]):
-                atom_attributes[x] = i
-            for n in range(natoms):
-                line = f.readline()
-                if not line: break
-                fields = line.split()
-                id.append(int(fields[atom_attributes['id']]))
-                types.append(int(fields[atom_attributes['type']]))
-                element.append(str(fields[atom_attributes['element']])) ## ssrokyz
-                add_quantity(fields, positions, ['x', 'y', 'z'])
-                add_quantity(fields, scaled_positions, ['xs', 'ys', 'zs'])
-                add_quantity(fields, velocities, ['vx', 'vy', 'vz'])
-                add_quantity(fields, forces, ['fx', 'fy', 'fz'])
-                add_quantity(fields, quaternions, ['c_q[1]', 'c_q[2]',
-                                                   'c_q[3]', 'c_q[4]'])
+        line = f.readline()
+        assert 'ITEM: ATOMS' in line
+        # (reliably) identify values by labels behind
+        # "ITEM: ATOMS" - requires >=lammps-7Jul09
+        # create corresponding index dictionary before
+        # iterating over atoms to (hopefully) speed up lookups...
+        atom_attributes = {}
+        for (i, x) in enumerate(line.split()[2:]):
+            atom_attributes[x] = i
+        for n in range(natoms):
+            line = f.readline()
+            fields = line.split()
+            id.append(int(fields[atom_attributes['id']]))
+            types.append(int(fields[atom_attributes['type']]))
+            element.append(str(fields[atom_attributes['element']])) ## ssrokyz
+            add_quantity(fields, positions, ['x', 'y', 'z'], atom_attributes)
+            add_quantity(fields, scaled_positions, ['xs', 'ys', 'zs'], atom_attributes)
+            add_quantity(fields, velocities, ['vx', 'vy', 'vz'], atom_attributes)
+            add_quantity(fields, forces, ['fx', 'fy', 'fz'], atom_attributes)
+            add_quantity(fields, quaternions, ['c_q[1]', 'c_q[2]',
+                                               'c_q[3]', 'c_q[4]'], atom_attributes)
 
-            if order:
-                types = reorder(types)
-                positions = reorder(positions)
-                scaled_positions = reorder(scaled_positions)
-                velocities = reorder(np.array(velocities) /units.fs /1e3) ## ssrokyz ## lammps metal unit: Ang./picosec ## units.fs *1e3 = units.ps
-                forces = reorder(forces)
-                quaternions = reorder(quaternions)
+        if order:
+            types = reorder(types, id)
+            positions = reorder(positions, id)
+            scaled_positions = reorder(scaled_positions, id)
+            velocities = reorder(np.array(velocities) /units.fs /1e3, id) ## ssrokyz ## lammps metal unit: Ang./picosec ## units.fs *1e3 = units.ps
+            forces = reorder(forces, id)
+            quaternions = reorder(quaternions, id)
 
-            if len(quaternions):
-                images.append(Quaternions(symbols=element, ## ssrokyz
-                                          positions=positions,
-                                          cell=cell, celldisp=celldisp,
-                                          quaternions=quaternions))
-            elif len(positions):
-                images.append(atomsobj(
-                    symbols=element, positions=positions, ## ssrokyz
-                    celldisp=celldisp, cell=cell))
-            elif len(scaled_positions):
-                images.append(atomsobj(
-                    symbols=element, scaled_positions=scaled_positions, ## ssrokyz
-                    celldisp=celldisp, cell=cell))
+        ## Make 'Atoms' object
+        if len(quaternions):
+            atoms = Quaternions(
+                symbols=element,
+                positions=positions,
+                cell=cell,
+                celldisp=celldisp,
+                quaternions=quaternions,
+                )
+        elif len(positions):
+            atoms = atomsobj(
+                symbols=element,
+                positions=positions,
+                celldisp=celldisp,
+                cell=cell,
+                )
+        elif len(scaled_positions):
+            atoms = atomsobj(
+                symbols=element,
+                scaled_positions=scaled_positions,
+                celldisp=celldisp,
+                cell=cell,
+                )
+        if len(velocities):
+            atoms.set_velocities(velocities)
+        if len(forces):
+            calculator = SinglePointCalculator(atoms, energy=0.0, forces=forces)
+            atoms.set_calculator(calculator)
+        return atoms
 
-            if len(velocities):
-                images[-1].set_velocities(velocities)
-            if len(forces):
-                calculator = SinglePointCalculator(images[-1],
-                                                   energy=0.0, forces=forces)
-                images[-1].set_calculator(calculator)
+    
+    ## Read first image
+    atoms = read_a_loop(f)
+    natoms = len(atoms)
+    if 0 in sampling_index:
+        images.append(atoms)
+    img_ind = 1
+    while True:
+        try:
+            if img_ind in sampling_index:
+                images.append(read_a_loop(f))
+            else:
+                for _ in range(natoms + 9):
+                    line = f.readline()
+        except:
+            break
+        else:
+            img_ind +=1
 
-    return images[index]
+    return images
 
