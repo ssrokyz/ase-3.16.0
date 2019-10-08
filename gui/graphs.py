@@ -10,6 +10,7 @@ import ase.gui.ui as ui
 
 graph_help_text = _("""\
 Symbols:
+<c>np</c>: numpy object
 <c>e</c>: total energy
 <c>epot</c>: potential energy
 <c>ekin</c>: kinetic energy
