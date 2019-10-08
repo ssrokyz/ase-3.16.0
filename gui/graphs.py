@@ -85,6 +85,8 @@ class Graphs:
 
 def make_plot(data, i, expr, type):
     import matplotlib.pyplot as plt
+    font = {'family':'Arial'}
+    plt.rc('font', **font)
     basesize = 4
     plt.figure(figsize=(basesize * 2.5**0.5, basesize))
     m = len(data)
@@ -103,7 +105,11 @@ def make_plot(data, i, expr, type):
         for j in range(1, m):
             plt.plot(data[0], data[j])
             plt.plot([data[0, i]], [data[j, i]], 'o')
-    plt.title(expr)
+    plt.xticks(fontsize='x-large')
+    plt.yticks(fontsize='x-large')
+    plt.tick_params(axis="both",direction="in", labelsize='x-large')
+    plt.title(expr, fontsize='x-large')
+    plt.grid(alpha=0.2)
     plt.show()
 
 
