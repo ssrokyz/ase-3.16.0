@@ -99,12 +99,12 @@ def make_plot(data, i, expr, type):
 
     if type == 'y':
         for j in range(m):
-            plt.plot(data[j])
-            plt.plot([i], [data[j, i]], 'o')
+            plt.plot(data[j], c='k')
+            plt.plot([i], [data[j, i]], 'o', markersize=5, c='navy')
     else:
         for j in range(1, m):
-            plt.plot(data[0], data[j])
-            plt.plot([data[0, i]], [data[j, i]], 'o')
+            plt.plot(data[0], data[j], c='k')
+            plt.plot([data[0, i]], [data[j, i]], 'o', markersize=5, c='navy')
     plt.xticks(fontsize='x-large')
     plt.yticks(fontsize='x-large')
     plt.tick_params(axis="both",direction="in", labelsize='x-large')
