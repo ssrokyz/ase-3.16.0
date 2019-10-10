@@ -128,6 +128,7 @@ def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
 
         if order:
             types = reorder(types, id)
+            element = reorder(element, id)
             positions = reorder(positions, id)
             scaled_positions = reorder(scaled_positions, id)
             velocities = reorder(np.array(velocities) /units.fs /1e3, id) ## ssrokyz ## lammps metal unit: Ang./picosec ## units.fs *1e3 = units.ps
@@ -166,27 +167,25 @@ def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
 
     ## Main
     images = []
-    sampling_index = range(10000000)[index]
-
-    ## Read first image
-    atoms = read_a_loop(f)
-    natoms = len(atoms)
-    if 0 in sampling_index:
-        images.append(atoms)
-    img_ind = 1
-    for _ in range(sampling_index[-1]):
-        try:
-            if img_ind in sampling_index:
-                images.append(read_a_loop(f))
-            else:
-                for _ in range(natoms + 9):
-                    line = f.readline()
-                    if not line:
-                        break
-        except:
+    # Get number of atoms
+    while True:
+        tmp_line = f.readline()
+        if 'ITEM: NUMBER OF ATOMS' in tmp_line:
+            natoms = int(f.readline())
+            f.seek(0)
             break
+    # Get number of images
+    from ss_util import get_number_of_lines
+    nimages = int(get_number_of_lines(f) / (natoms+9))
+    # Set stop of slice
+    index = slice(*index.indices(nimages))
+
+    ## Main
+    for img_ind in range(index.stop):
+        if img_ind in range(index.stop)[index]:
+            yield read_a_loop(f)
         else:
-            img_ind +=1
-
-    return images
-
+            for j in range(natoms + 9):
+                line = f.readline()
+                if not line:
+                    break

@@ -486,7 +486,6 @@ def read(filename, index=None, format=None, parallel=True, return_format=False, 
             return next(_iread(filename, slice(index, None), format, io,
                                parallel=parallel, **kwargs))
 
-
 def iread(filename, index=None, format=None, parallel=True, **kwargs):
     """Iterator for reading Atoms objects from file.
 
