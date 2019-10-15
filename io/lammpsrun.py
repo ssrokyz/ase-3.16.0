@@ -174,18 +174,36 @@ def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
             natoms = int(f.readline())
             f.seek(0)
             break
-    # Get number of images
-    from ss_util import get_number_of_lines
-    nimages = int(get_number_of_lines(f) / (natoms+9))
-    # Set stop of slice
-    index = slice(*index.indices(nimages))
+    # Get index
+    get_nline_bool = False
+    if index.stop == None or index.stop >= 0:
+        if index.start == None or index.start >= 0:
+            index = slice(*index.indices(int(1e8)))
+        elif index.start < 0:
+            get_nline_bool = True
+    elif index.stop < 0:
+        get_nline_bool = True
+    if get_nline_bool:
+        from ss_util import get_number_of_lines
+        nimages = int(get_number_of_lines(f) / (natoms+9))
+        # Set stop of slice
+        index = slice(*index.indices(nimages))
 
     ## Main
     for img_ind in range(index.stop):
-        if img_ind in range(index.stop)[index]:
-            yield read_a_loop(f)
+        if img_ind >= index.start and (img_ind - index.start) % index.step == 0:
+            try: yield read_a_loop(f)
+            except KeyboardInterrupt: raise ValueError('Keyboard interrupted.')
+            except:
+                print('%%%% Warning !! File is not complete. Be aware. %%%%')
+                print('%%%% Warning !! File is not complete. Be aware. %%%%')
+                print('%%%% Warning !! File is not complete. Be aware. %%%%')
+                print('%%%% Warning !! File is not complete. Be aware. %%%%')
+                break
+            else: pass
         else:
             for j in range(natoms + 9):
                 line = f.readline()
-                if not line:
-                    break
+                if not line: break
+        if img_ind == index.stop:
+            break
