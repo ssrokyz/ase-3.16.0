@@ -70,13 +70,13 @@ class Images:
         else:
             return F
 
-    def get_potential_energies(self, atoms): ## ssrokyz start
+    def get_atomic_energies(self, atoms): ## ssrokyz start
         try:
-            energies =  atoms.get_potential_energies()
+            atomic_energies = atoms.get_atomic_energies()
         except RuntimeError:
             return None
         else:
-            return energies ## ssrokyz end
+            return atomic_energies ## ssrokyz end
 
     def initialize(self, images, filenames=None, init_magmom=False):
         nimages = len(images)

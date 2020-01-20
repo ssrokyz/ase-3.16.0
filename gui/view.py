@@ -336,8 +336,8 @@ class View:
         if self.colormode == 'force':
             f = (self.get_forces()**2).sum(1)**0.5
             return f * self.images.get_dynamic(self.atoms)
-        elif self.colormode == 'energies':  ## ssrokyz start 
-            return self.atoms.get_potential_energies() ## ssrokyz end
+        elif self.colormode == 'atomic_energies':  ## ssrokyz start 
+            return self.atoms.get_atomic_energies() ## ssrokyz end
         elif self.colormode == 'velocity':
             return (self.atoms.get_velocities()**2).sum(1)**0.5
         elif self.colormode == 'initial charge':

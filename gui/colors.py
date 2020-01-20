@@ -16,7 +16,7 @@ class ColorWindow:
         self.gui = gui
         self.win.add(ui.Label(_('Choose how the atoms are colored:')))
         values = ['jmol', 'tag', 'force', 'velocity',
-                  'initial charge', 'magmom', 'neighbors', 'energies'] ## ssrokyz
+                  'initial charge', 'magmom', 'neighbors', 'atomic_energies'] ## ssrokyz
         labels = [_('By atomic number, default "jmol" colors'),
                   _('By tag'),
                   _('By force'),
@@ -43,13 +43,13 @@ class ColorWindow:
         # XXX not sure how to deal with some images having forces,
         # and other images not.  Same goes for below quantities
         F = images.get_forces(atoms)
-        energies = images.get_potential_energies(atoms) ## ssrokyz
+        atomic_energies = images.get_atomic_energies(atoms) ## ssrokyz
         radio['force'].active = F is not None
         radio['velocity'].active = atoms.has('momenta')
         radio['initial charge'].active = atoms.has('initial_charges')
         radio['magmom'].active = get_magmoms(atoms).any()
         radio['neighbors'].active = True
-        radio['energies'].active = energies is not None ## ssrokyz
+        radio['atomic_energies'].active = atomic_energies is not None ## ssrokyz
 
     def toggle(self, value):
         self.gui.colormode = value
@@ -65,7 +65,7 @@ class ColorWindow:
             self.gui.colormode_data = colorscale, mn, mx
 
             unit = {'tag': '',
-                    'energies' : 'eV', ## ssrokyz
+                    'atomic_energies' : 'eV', ## ssrokyz
                     'force': 'eV/Ang',
                     'velocity': '??',
                     'charge': '|e|',

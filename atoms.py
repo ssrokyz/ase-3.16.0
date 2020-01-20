@@ -689,7 +689,7 @@ class Atoms(object):
                     energy += constraint.adjust_potential_energy(self)
         return energy
 
-    def get_potential_energies(self):
+    def get_atomic_energies(self):
         """Calculate the potential energies of all the atoms.
 
         Only available with calculators supporting per-atom energies
@@ -697,7 +697,7 @@ class Atoms(object):
         """
         if self._calc is None:
             raise RuntimeError('Atoms object has no calculator.')
-        return self._calc.get_potential_energies(self)
+        return self._calc.get_atomic_energies(self)
 
     def get_kinetic_energy(self):
         """Get the kinetic energy."""
