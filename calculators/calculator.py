@@ -41,7 +41,7 @@ def compare_atoms(atoms1, atoms2, tol=1e-15):
 
 
 all_properties = ['energy', 'forces', 'stress', 'dipole',
-                  'charges', 'magmom', 'magmoms', 'free_energy', 'energies'] ## ssrokyz
+                  'charges', 'magmom', 'magmoms', 'free_energy', 'atomic_energies'] ## ssrokyz
 
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc',
@@ -456,8 +456,8 @@ class Calculator(object):
         else:
             return energy
 
-    def get_potential_energies(self, atoms=None):  ## ssroky start 
-        return self.get_property('energies', atoms) ## ssrokyz end
+    def get_atomic_energies(self, atoms=None):  ## ssroky start 
+        return self.get_property('atomic_energies', atoms) ## ssrokyz end
 
     def get_forces(self, atoms=None):
         return self.get_property('forces', atoms)
@@ -595,14 +595,14 @@ class Calculator(object):
         if (str(self.__class__)=="<class 'amp.Amp'>"):
             if (str(self.model.__class__)=="<class 'amp.model.tflow.NeuralNetwork'>"):
                 disp_atoms = self.generate_disp(atoms, d = d)
-                energies = self.calculateE_bunch(disp_atoms, parallel = parallel)
-                energies = np.array(np.split(np.array(np.split(
-                    energies, len(atoms)*3)), len(atoms)))
+                atomic_energies = self.calculateE_bunch(disp_atoms, parallel = parallel)
+                atomic_energies = np.array(np.split(np.array(np.split(
+                    atomic_energies, len(atoms)*3)), len(atoms)))
                 forces = np.zeros((len(atoms),3))
                 for i in range(len(atoms)):
                     for j in range(3):
                         forces [i][j] = \
-                            -1 * ( energies[i][j][1] - energies[i][j][0] ) / (2 * d)
+                            -1 * ( atomic_energies[i][j][1] - atomic_energies[i][j][0] ) / (2 * d)
                 return forces
             else:
                 Calculator.calculate(self, atoms)
