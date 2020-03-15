@@ -743,13 +743,17 @@ class Atoms(object):
                     constraint.adjust_forces(self, forces)
         return forces
 
-    def get_stress(self, voigt=True):
+    def get_stress(self, voigt=True, apply_constraint=True,
+                   include_ideal_gas=False):
         """Calculate stress tensor.
 
         Returns an array of the six independent components of the
         symmetric stress tensor, in the traditional Voigt order
         (xx, yy, zz, yz, xz, xy) or as a 3x3 matrix.  Default is Voigt
         order.
+
+        The ideal gas contribution to the stresses is added if the
+        atoms have momenta and ``include_ideal_gas`` is set to True.
         """
 
         if self._calc is None:
@@ -759,13 +763,30 @@ class Atoms(object):
         shape = stress.shape
 
         if shape == (3, 3):
-            warnings.warn('Converting 3x3 stress tensor from %s ' %
-                          self._calc.__class__.__name__ +
-                          'calculator to the required Voigt form.')
+            # Convert to the Voigt form before possibly applying
+            # constraints and adding the dynamic part of the stress
+            # (the "ideal gas contribution").
             stress = np.array([stress[0, 0], stress[1, 1], stress[2, 2],
                                stress[1, 2], stress[0, 2], stress[0, 1]])
         else:
             assert shape == (6,)
+
+        if apply_constraint:
+            for constraint in self.constraints:
+                if hasattr(constraint, 'adjust_stress'):
+                    constraint.adjust_stress(self, stress)
+
+        # Add ideal gas contribution, if applicable
+        if include_ideal_gas and self.has('momenta'):
+            stresscomp = np.array([[0, 5, 4], [5, 1, 3], [4, 3, 2]])
+            p = self.get_momenta()
+            masses = self.get_masses()
+            invmass = 1.0 / masses
+            invvol = 1.0 / self.get_volume()
+            for alpha in range(3):
+                for beta in range(alpha, 3):
+                    stress[stresscomp[alpha, beta]] -= (
+                        p[:, alpha] * p[:, beta] * invmass).sum() * invvol
 
         if voigt:
             return stress
