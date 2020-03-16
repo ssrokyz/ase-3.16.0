@@ -138,9 +138,20 @@ class NPT(MolecularDynamics):
     classname = "NPT"  # Used by the trajectory.
     _npt_version = 2   # Version number, used for Asap compatibility.
     
-    def __init__(self, atoms,
-                 timestep, temperature, externalstress, ttime, pfactor,
-                 mask=None, trajectory=None, logfile=None, loginterval=1):
+    def __init__(
+        self,
+        atoms,
+        timestep,
+        temperature,
+        externalstress,
+        ttime,
+        pfactor,
+        wrap=True,
+        mask=None,
+        trajectory=None,
+        logfile=None,
+        loginterval=1,
+        ):
         MolecularDynamics.__init__(self, atoms, timestep, trajectory,
                                    logfile, loginterval)
         # self.atoms = atoms
@@ -149,14 +160,15 @@ class NPT(MolecularDynamics):
         self.temperature = temperature
         self.set_stress(externalstress)
         self.set_mask(mask)
-        self.eta = np.zeros((3, 3), float)
-        self.zeta = 0.0
+        self.eta             = np.zeros((3, 3), float)
+        self.zeta            = 0.0
         self.zeta_integrated = 0.0
-        self.initialized = 0
-        self.ttime = ttime
-        self.pfactor_given = pfactor
+        self.initialized     = 0
+        self.ttime           = ttime
+        self.pfactor_given   = pfactor
+        self.wrap            = wrap
         self._calculateconstants()
-        self.timeelapsed = 0.0
+        self.timeelapsed    = 0.0
         self.frac_traceless = 1
 
     def set_temperature(self, temperature):
@@ -278,6 +290,10 @@ class NPT(MolecularDynamics):
         # h must be equal to self.atoms.GetUnitCell()
         #
         # print "Making a timestep"
+
+        if self.wrap:
+            self.atoms.wrap(eps=0.)
+
         dt = self.dt
         h_future = self.h_past + 2 * dt * np.dot(self.h, self.eta)
         if self.pfactor_given is None:
