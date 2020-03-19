@@ -289,6 +289,19 @@ def read_vasp_out(filename='OUTCAR', index=-1, force_consistent=False):
                 temp = data[n + 1 + i].split()
                 cell += [[float(temp[0]), float(temp[1]), float(temp[2])]]
             atoms.set_cell(cell)
+        if 'Free energy of the ion-electron system (eV)' in line:
+            e_alpha_z  = float(data[n + 2].split()[4])
+            e_ewald    = float(data[n + 3].split()[4])
+            e_hartree  = float(data[n + 4].split()[4])
+            e_exchange = float(data[n + 5].split()[3])
+            e_vxc_exc  = float(data[n + 6].split()[3])
+            e_paw_double1, e_paw_double2 = map(float, data[n + 7].split()[4:6])
+            e_t_s      = float(data[n + 8].split()[4])
+            e_eigen    = float(data[n + 9].split()[3])
+            e_atomic   = float(data[n + 10].split()[4])
+            e_solv     = float(data[n + 11].split()[3])
+        if 'Edisp (eV)' in line:
+            e_vdw = float(data[n].split()[2])
         if 'FREE ENERGIE OF THE ION-ELECTRON SYSTEM' in line:
             # choose between energy wigh smearing extrapolated to zero
             # or free energy (latter is consistent with forces)
@@ -300,6 +313,18 @@ def read_vasp_out(filename='OUTCAR', index=-1, force_consistent=False):
             if ecount < poscount:
                 # reset energy for LAST set of atoms, not current one -
                 # VASP 5.11? and up
+                images[-1].calc.results['e_alpha_z'] = e_alpha_z 
+                images[-1].calc.results['e_ewald'] = e_ewald
+                images[-1].calc.results['e_hartree'] = e_hartree 
+                images[-1].calc.results['e_exchange'] = e_exchange
+                images[-1].calc.results['e_vxc_exc'] = e_vxc_exc 
+                images[-1].calc.results['e_paw_double1'] = e_paw_double1 
+                images[-1].calc.results['e_paw_double2'] = e_paw_double2
+                images[-1].calc.results['e_t_s'] = e_t_s 
+                images[-1].calc.results['e_eigen'] = e_eigen 
+                images[-1].calc.results['e_atomic'] = e_atomic 
+                images[-1].calc.results['e_solv'] = e_solv 
+                images[-1].calc.results['e_vdw'] = e_vdw
                 images[-1].calc.results['energy'] = energy
                 images[-1].calc.set(energy=energy)
             ecount += 1
