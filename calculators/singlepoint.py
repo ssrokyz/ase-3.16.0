@@ -22,7 +22,9 @@ class SinglePointCalculator(Calculator):
             assert property in all_properties
             if value is None:
                 continue
-            if property in ['energy', 'magmom', 'free_energy']:
+            if property in ['energy', 'magmom', 'free_energy',
+                'e_alpha_z', 'e_ewald', 'e_hartree', 'e_exchange', 'e_vxc_exc', 'e_vdw',
+                'e_paw_double1', 'e_paw_double2', 'e_t_s', 'e_eigen', 'e_atomic', 'e_solv']:
                 self.results[property] = value
             else:
                 self.results[property] = np.array(value, float)
