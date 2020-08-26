@@ -119,6 +119,7 @@ def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
             id.append(int(fields[atom_attributes['id']]))
             types.append(int(fields[atom_attributes['type']]))
             element.append(str(fields[atom_attributes['element']])) ## ssrokyz
+            pe.append(float(fields[atom_attributes['c_1']])) ## ssrokyz
             add_quantity(fields, positions, ['x', 'y', 'z'], atom_attributes)
             add_quantity(fields, scaled_positions, ['xs', 'ys', 'zs'], atom_attributes)
             add_quantity(fields, velocities, ['vx', 'vy', 'vz'], atom_attributes)
@@ -128,7 +129,8 @@ def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
 
         if order:
             types = reorder(types, id)
-            element = reorder(element, id)
+            element = reorder(element, id) ## ssrokyz
+            pe = reorder(pe, id) ## ssrokyz
             positions = reorder(positions, id)
             scaled_positions = reorder(scaled_positions, id)
             velocities = reorder(np.array(velocities) /units.fs /1e3, id) ## ssrokyz ## lammps metal unit: Ang./picosec ## units.fs *1e3 = units.ps
@@ -163,6 +165,8 @@ def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
         if len(forces):
             calculator = SinglePointCalculator(atoms, energy=0.0, forces=forces)
             atoms.set_calculator(calculator)
+        if len(pe):
+            atoms._calc.results['atomic_energies'] = pe
         return atoms
 
     ## Main
