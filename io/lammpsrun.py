@@ -45,6 +45,7 @@ def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
         types = []
         positions = []
         element = [] ## ssrokyz
+        pe = [] ## ssrokyz
         scaled_positions = []
         velocities = []
         forces = []
