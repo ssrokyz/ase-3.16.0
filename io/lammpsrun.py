@@ -171,7 +171,6 @@ def read_lammps_dump(fileobj, index, order=True, atomsobj=Atoms):
         return atoms
 
     ## Main
-    images = []
     # Get number of atoms
     while True:
         tmp_line = f.readline()
